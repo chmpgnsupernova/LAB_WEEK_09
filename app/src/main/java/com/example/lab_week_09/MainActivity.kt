@@ -15,6 +15,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue // IMPORT INI
+import androidx.compose.runtime.mutableStateListOf // IMPORT INI
+import androidx.compose.runtime.mutableStateOf // IMPORT INI
+import androidx.compose.runtime.remember // IMPORT INI
+import androidx.compose.runtime.setValue // IMPORT INI
+import androidx.compose.runtime.snapshots.SnapshotStateList // IMPORT INI
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -32,67 +38,109 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Ini dari Step 13: Bikin list dan pass ke Home
-                    val list = listOf("Tanu", "Tina", "Tono") // [cite: 212]
-                    Home(items = list) // [cite: 213]
+                    // Step 7: Panggil Home() doang, ga pake parameter
+                    Home() //
                 }
             }
         }
     }
 }
 
-// Ini dari Step 12: Home() sekarang ada parameter, @Preview ilang
-@Composable
-fun Home(items: List<String>, modifier: Modifier = Modifier) { //
-    // Ganti Column jadi LazyColumn [cite: 131, 135]
-    LazyColumn(modifier = modifier) {
+// Data class Student dari Step 2
+data class Student(
+    var name: String
+)
 
-        // item {} -> ini buat nampilin 1 UI (header input kita)
-        item { //
+// Step 3: Home Composable jadi Parent (State holder)
+@Composable
+fun Home() {
+    // Step 3: Bikin state buat list data
+    val listData = remember {
+        mutableStateListOf( //
+            Student("Tanu"), //
+            Student("Tina"), //
+            Student("Tono") //
+        )
+    }
+
+    // Step 3: Bikin state buat input field
+    // Pake var dan 'by' delegate biar lebih clean
+    var inputField by remember { mutableStateOf(Student("")) } //
+
+    // Step 3: Panggil Child Composable
+    HomeContent(
+        listData = listData, //
+        inputField = inputField, //
+        // Lambda buat update input field
+        onInputValueChange = { newName ->
+            inputField = inputField.copy(name = newName) //
+        },
+        // Lambda buat nambahin item ke list
+        onButtonClick = {
+            // Ini logic dari assignment (udah ada di modul)
+            if (inputField.name.isNotBlank()) { //
+                listData.add(inputField) //
+                inputField = Student("") // Reset input field
+            }
+        }
+    )
+}
+
+// Step 4: HomeContent Composable jadi Child (UI)
+@Composable
+fun HomeContent(
+    listData: SnapshotStateList<Student>, //
+    inputField: Student, //
+    onInputValueChange: (String) -> Unit, //
+    onButtonClick: () -> Unit //
+) {
+    LazyColumn {
+        // item {} -> buat header input
+        item {
             Column(
                 modifier = Modifier
-                    .padding(16.dp) // [cite: 146]
-                    .fillMaxSize(), // [cite: 146]
-                horizontalAlignment = Alignment.CenterHorizontally // [cite: 155]
+                    .padding(16.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Teks "Enter a name"
-                Text(text = stringResource(id = R.string.enter_item)) // [cite: 156]
+                Text(text = stringResource(id = R.string.enter_item))
 
                 // Input field
                 TextField(
-                    value = "", // [cite: 160]
-                    keyboardOptions = KeyboardOptions( // [cite: 162]
-                        keyboardType = KeyboardType.Number //
+                    value = inputField.name, // Ambil dari state
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text // Ganti jadi Text
                     ),
-                    onValueChange = { /* Nanti di Part 2 */ }, // [cite: 167]
+                    onValueChange = { onInputValueChange(it) } // Panggil lambda
                 )
 
                 // Button Submit
-                Button(onClick = { /* Nanti di Part 2 */ }) { // [cite: 173]
-                    Text(text = stringResource(id = R.string.button_click)) // [cite: 175]
+                Button(onClick = { onButtonClick() }) { // Panggil lambda
+                    Text(text = stringResource(id = R.string.button_click))
                 }
             }
         }
 
-        // items(list) {} -> ini buat nampilin list data (pengganti RecyclerView)
-        items(items) { item -> //
+        // items(list) {} -> buat nampilin list data
+        items(listData) { item -> //
             Column(
                 modifier = Modifier
-                    .padding(vertical = 4.dp) // [cite: 186]
-                    .fillMaxSize(), // [cite: 186]
-                horizontalAlignment = Alignment.CenterHorizontally // [cite: 186]
+                    .padding(vertical = 4.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = item) // [cite: 188]
+                Text(text = item.name) // Tampilin nama student
             }
         }
     }
 }
 
-// Ini dari Step 12: Bikin function preview baru
-@Preview(showBackground = true) // [cite: 198]
+
+// Preview buat Home()
+@Preview(showBackground = true)
 @Composable
-fun PreviewHome() { // [cite: 200]
+fun PreviewHome() {
     LAB_WEEK_09Theme {
-        Home(listOf("Tanu", "Tina", "Tono")) // [cite: 202]
+        Home()
     }
 }
